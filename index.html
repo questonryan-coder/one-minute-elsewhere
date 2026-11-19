@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Minute Elsewhere — a 60-second reset in a real place</title>
+<meta name="description" content="Pick how you arrive, get sent to a real AuraFlow world for 60 seconds of guided breathing and quiet ambience. No signup, no feed, no noise. Just elsewhere.">
+<style>
+  :root{
+    --bg:#0B1220; --card:#111C30; --card2:#16233C; --ink:#EAF0FA; --muted:#9DB0CC;
+    --line:#24365A; --accent:#7DD3C8; --accent2:#F4C97A; --radius:20px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+  .wrap{max-width:700px;margin:0 auto;padding:20px 16px 52px}
+  header{text-align:center;padding:22px 0 4px}
+  .moon{font-size:42px;line-height:1}
+  h1{font-size:34px;margin:8px 0 4px;letter-spacing:-.02em;line-height:1.15}
+  .sub{color:var(--muted);font-size:16px;margin:0 auto;max-width:540px}
+  .streakbar{text-align:center;margin-top:12px;font-size:13px;color:var(--accent);font-weight:700;min-height:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:16px}
+  .card h2{margin:0 0 4px;font-size:18px}
+  .card p.help{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .moods{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.moods{grid-template-columns:1fr}h1{font-size:28px}}
+  .mood{border:2px solid var(--line);background:var(--card2);border-radius:16px;padding:16px;text-align:left;cursor:pointer;color:var(--ink);width:100%}
+  .mood:hover{border-color:var(--accent)}
+  .mood[aria-pressed="true"]{border-color:var(--accent);background:#1B3350;box-shadow:0 0 0 3px rgba(125,211,200,.18)}
+  .mood .emoji{font-size:26px}
+  .mood .mt{font-weight:800;font-size:16px;display:block;margin-top:4px}
+  .mood .md{font-size:13px;color:var(--muted);display:block;margin-top:2px}
+  .mood .mw{font-size:12px;color:var(--accent);font-weight:700;display:block;margin-top:8px}
+  label{font-weight:700;font-size:14px;display:block;margin-bottom:6px}
+  .hint{font-weight:400;color:var(--muted);font-size:13px}
+  input[type=range]{width:100%;accent-color:var(--accent);height:36px}
+  .tensionrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:-4px}
+  .tensionval{font-size:28px;font-weight:800;text-align:center}
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{flex:1 1 100px;border:2px solid var(--line);background:var(--card2);color:var(--ink);border-radius:999px;padding:11px;font-weight:800;cursor:pointer;font-size:15px}
+  .pill[aria-pressed="true"]{border-color:var(--accent2);background:#2A2416;color:var(--accent2)}
+  .btn{border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;text-align:center;text-decoration:none;display:inline-block;width:100%}
+  .btn-primary{background:var(--accent);color:#06231F}
+  .btn-primary:disabled{background:#2A3A58;color:#7C90B2;cursor:not-allowed}
+  .btn-ghost{background:transparent;border:2px solid var(--line);color:var(--ink)}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .btn-row .btn{flex:1 1 160px;width:auto}
+  /* Session */
+  #session{display:none;margin-top:16px;border-radius:24px;overflow:hidden;border:1px solid var(--line)}
+  .scene{position:relative;min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px 18px;overflow:hidden;transition:background 1s}
+  .scene::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.20),transparent 42%),radial-gradient(circle at 75% 80%,rgba(255,255,255,.12),transparent 40%);animation:drift 26s ease-in-out infinite alternate}
+  @keyframes drift{from{transform:translateX(-3%) translateY(-2%) scale(1)}to{transform:translateX(3%) translateY(2%) scale(1.06)}}
+  .scene-ocean{background:linear-gradient(180deg,#1B2A4A 0%,#1E4A5E 45%,#2A7A7B 100%)}
+  .scene-rain{background:linear-gradient(180deg,#232A26 0%,#31473A 55%,#4A674F 100%)}
+  .scene-forest{background:linear-gradient(180deg,#14261A 0%,#1E4A2E 50%,#3E7A4A 100%)}
+  .scene-lake{background:linear-gradient(180deg,#2B2350 0%,#6B4A6E 45%,#E8A87C 100%)}
+  .scene>*{position:relative;z-index:1}
+  #worldName{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.82);font-weight:800}
+  #worldLine{font-size:15px;color:rgba(255,255,255,.92);max-width:440px;margin:6px auto 0}
+  #breathCircle{width:172px;height:172px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;margin:26px auto 8px;transition:transform .95s ease-in-out;backdrop-filter:blur(2px)}
+  #breathCircleInner{font-size:20px;font-weight:800;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+  #phaseHint{font-size:14px;color:rgba(255,255,255,.9);min-height:22px}
+  #timerText{font-size:15px;font-weight:800;color:#fff;margin-top:10px}
+  #breathCount{font-size:13px;color:rgba(255,255,255,.8)}
+  .progress{height:8px;background:rgba(255,255,255,.22);border-radius:99px;overflow:hidden;width:min(440px,90%);margin:14px auto 0}
+  #progressBar{height:100%;width:0%;background:#fff;border-radius:99px;transition:width .3s linear}
+  .session-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .sbtn{background:rgba(0,0,0,.28);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:14px}
+  /* Finish */
+  #finish{display:none;text-align:center}
+  #finish .big{font-size:40px}
+  #deltaOut{font-size:17px;font-weight:800;margin-top:8px}
+  #shareOut{width:100%;min-height:74px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--ink);padding:12px;font-size:14px;margin-top:12px}
+  .facts{font-size:14px;color:#C7D3E8}
+  .facts li{margin-bottom:8px}
+  .door{background:linear-gradient(135deg,#132A2A,#16233C);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:16px;text-align:center}
+  .door a{color:var(--accent);font-weight:800}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:26px}
+  footer a{color:var(--accent2);font-weight:700}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="moon" aria-hidden="true">🌙</div>
+    <h1>One Minute Elsewhere</h1>
+    <p class="sub">No feed. No signup. No noise. Pick how you arrive, and spend one real minute in a real place — guided breathing, quiet ambience, then back.</p>
+    <div class="streakbar" id="streakBar"></div>
+  </header>
+
+  <!-- SETUP -->
+  <div id="setup">
+    <section class="card" aria-label="How you arrive">
+      <h2>How do you arrive?</h2>
+      <p class="help">Be honest — the world you get depends on it. Each one is a real AuraFlow world, with the breathing pace that actually fits that state.</p>
+      <div class="moods" id="moodGrid">
+        <button type="button" class="mood" data-mood="wired" aria-pressed="false">
+          <span class="emoji">⚡</span><span class="mt">Wired</span>
+          <span class="md">Mind still racing. Can't switch off, even though you're tired.</span>
+          <span class="mw">→ Ocean at Dusk · breathe out longer than in</span>
+        </button>
+        <button type="button" class="mood" data-mood="tired" aria-pressed="false">
+          <span class="emoji">🪫</span><span class="mt">Running empty</span>
+          <span class="md">Not stressed, just flat. The day took everything.</span>
+          <span class="mw">→ Cabin Rain · slow, even breathing</span>
+        </button>
+        <button type="button" class="mood" data-mood="scattered" aria-pressed="false">
+          <span class="emoji">🗂️</span><span class="mt">Scattered</span>
+          <span class="md">Too many tabs open — in your head and on your screen.</span>
+          <span class="mw">→ Forest Clearing · box breathing to re-centre</span>
+        </button>
+        <button type="button" class="mood" data-mood="heavy" aria-pressed="false">
+          <span class="emoji">🎒</span><span class="mt">Carrying a lot</span>
+          <span class="md">Nothing's wrong exactly. It's just a heavy season.</span>
+          <span class="mw">→ Mountain Lake at Dawn · long, unhurried breaths</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Before check and length">
+      <label for="tensionBefore">How tight does it feel right now? <span class="hint">— you'll check again after, and see the honest difference</span></label>
+      <div class="tensionval"><span id="tensionBeforeVal">6</span> / 10</div>
+      <input type="range" id="tensionBefore" min="1" max="10" value="6" step="1">
+      <div class="tensionrow"><span>1 · loose, fine</span><span>10 · wound right up</span></div>
+
+      <div style="margin-top:18px">
+        <label>How long have you got?</label>
+        <div class="pills" id="durationPills">
+          <button type="button" class="pill" data-sec="60" aria-pressed="true">1 minute</button>
+          <button type="button" class="pill" data-sec="180" aria-pressed="false">3 minutes</button>
+          <button type="button" class="pill" data-sec="300" aria-pressed="false">5 minutes</button>
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <button class="btn btn-primary" id="beginBtn" disabled>Pick how you arrive first ↑</button>
+        <p class="help" style="text-align:center;margin-top:8px">Sound is optional and made live in your browser — soft rain, waves, or forest air for your world. Headphones help, silence works too.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Why one minute works</h2>
+      <ul class="facts">
+        <li><strong>Longer exhales calm the system.</strong> When your out-breath is longer than your in-breath (the Wired pattern: 4 in, 6 out), your heart rate eases down within a handful of breaths. That's physiology, not affirmations.</li>
+        <li><strong>A place beats a blank screen.</strong> Picturing — and hearing — one specific place gives a scattered mind a single thing to hold. Every world here is a full world in AuraFlow, not a stock loop.</li>
+        <li><strong>Short enough you'll actually do it.</strong> A 20-minute meditation you skip does nothing. Sixty finished seconds, most days, beats it.</li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- SESSION -->
+  <div id="session" aria-live="polite">
+    <div class="scene" id="scene">
+      <div id="worldName"></div>
+      <p id="worldLine"></p>
+      <div id="breathCircle"><div id="breathCircleInner">Ready</div></div>
+      <div id="phaseHint">Settle in. First breath starts now.</div>
+      <div id="timerText"></div>
+      <div id="breathCount"></div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="session-controls">
+        <button class="sbtn" id="soundBtn" type="button">🔊 Sound on</button>
+        <button class="sbtn" id="pauseBtn" type="button">⏸ Pause</button>
+        <button class="sbtn" id="endBtn" type="button">End early</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINISH -->
+  <section class="card" id="finish" aria-live="polite">
+    <div class="big" aria-hidden="true">🌅</div>
+    <h2 style="font-size:24px">You're back.</h2>
+    <p class="help" id="finishLine" style="color:var(--muted)"></p>
+
+    <label for="tensionAfter" style="margin-top:14px">And now — how tight does it feel?</label>
+    <div class="tensionval"><span id="tensionAfterVal">4</span> / 10</div>
+    <input type="range" id="tensionAfter" min="1" max="10" value="4" step="1">
+    <div class="tensionrow"><span>1 · loose, fine</span><span>10 · wound right up</span></div>
+    <div id="deltaOut"></div>
+
+    <textarea id="shareOut" readonly aria-label="Share text"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="copyBtn" type="button">Copy my minute</button>
+      <button class="btn btn-ghost" id="againBtn" type="button">Go elsewhere again</button>
+    </div>
+    <p class="help" id="copyMsg" style="min-height:20px;margin-top:8px"></p>
+  </section>
+
+  <div class="door">
+    <p style="margin:0;font-size:17px"><strong>One minute was the trailer.</strong></p>
+    <p style="color:var(--muted)">AuraFlow holds 350+ full worlds like these — rain, ocean, forest, mountain dawn — for sleep, focus, and study, as long as you need them.</p>
+    <p><a href="https://auraflowfocus.com" target="_blank" rel="noopener">Stay a while at auraflowfocus.com →</a></p>
+  </div>
+
+  <footer>
+    <p>Free forever · No signup · Your streak lives only in this browser</p>
+    <p>Made with care in Phoenix, Arizona. If this minute helped, <a href="https://paypal.me/queston" target="_blank" rel="noopener">leave a tip in the jar</a> — optional, always appreciated, never required.</p>
+  </footer>
+</div>
+
+<script>
+const WORLDS = {
+  wired:   { name:"Ocean at Dusk", scene:"scene-ocean", line:"Waves coming in slow over dark sand. Nothing here needs answering.", pattern:[{label:"Breathe in",sec:4,scale:1.28},{label:"Breathe out — long and slow",sec:6,scale:0.82}], sound:"ocean" },
+  tired:   { name:"Cabin Rain", scene:"scene-rain", line:"Rain on a cabin roof, wood warm behind you. You're inside, and it's enough.", pattern:[{label:"Breathe in",sec:4,scale:1.24},{label:"Hold, softly",sec:2,scale:1.24},{label:"Breathe out",sec:4,scale:0.84}], sound:"rain" },
+  scattered:{ name:"Forest Clearing", scene:"scene-forest", line:"One clearing, ringed with pines. One breath, held in a square. One thing at a time.", pattern:[{label:"Breathe in",sec:4,scale:1.26},{label:"Hold",sec:4,scale:1.26},{label:"Breathe out",sec:4,scale:0.84},{label:"Hold, empty",sec:4,scale:0.84}], sound:"forest" },
+  heavy:   { name:"Mountain Lake at Dawn", scene:"scene-lake", line:"Still water, first light. You don't have to set anything down — just breathe next to it for a minute.", pattern:[{label:"Breathe in — unhurried",sec:5,scale:1.30},{label:"Breathe out — unhurried",sec:5,scale:0.82}], sound:"lake" }
+};
+let chosenMood=null, durationSec=60, beforeVal=6;
+let running=false, paused=false, elapsed=0, breathsDone=0, phaseIdx=0, phaseLeft=0, tickTimer=null, sessionWorld=null;
+let audioCtx=null, audioNodes=null, soundOn=true;
+
+// streak storage
+function loadStats(){
+  try{ return JSON.parse(localStorage.getItem("ome_stats")||"{}"); }catch(e){ return {}; }
+}
+function saveSession(){
+  const s=loadStats(); const today=new Date().toISOString().slice(0,10);
+  s.totalMinutes=(s.totalMinutes||0)+Math.round(durationSec/60*10)/10;
+  s.sessions=(s.sessions||0)+1;
+  if(s.lastDay!==today){
+    const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+    s.streak=(s.lastDay===y)?(s.streak||0)+1:1; s.lastDay=today;
+  }
+  localStorage.setItem("ome_stats",JSON.stringify(s)); renderStreak();
+}
+function renderStreak(){
+  const s=loadStats(); const el=document.getElementById("streakBar");
+  if(s.sessions){ el.textContent="🌙 "+s.sessions+" minute"+(s.sessions>1?"s":"")+" elsewhere · "+(s.streak||1)+"-day streak · "+(s.totalMinutes||0)+" min total"; }
+}
+renderStreak();
+
+// mood + duration selection
+document.getElementById("moodGrid").addEventListener("click",e=>{
+  const b=e.target.closest(".mood"); if(!b) return;
+  chosenMood=b.dataset.mood;
+  document.querySelectorAll(".mood").forEach(m=>m.setAttribute("aria-pressed", m===b?"true":"false"));
+  const btn=document.getElementById("beginBtn"); btn.disabled=false;
+  btn.textContent="Take me to "+WORLDS[chosenMood].name+" →";
+});
+document.getElementById("durationPills").addEventListener("click",e=>{
+  const b=e.target.closest(".pill"); if(!b) return;
+  durationSec=parseInt(b.dataset.sec,10);
+  document.querySelectorAll(".pill").forEach(p=>p.setAttribute("aria-pressed", p===b?"true":"false"));
+});
+document.getElementById("tensionBefore").addEventListener("input",e=>{
+  beforeVal=parseInt(e.target.value,10); document.getElementById("tensionBeforeVal").textContent=beforeVal;
+});
+document.getElementById("tensionAfter").addEventListener("input",e=>{
+  document.getElementById("tensionAfterVal").textContent=e.target.value; updateDelta();
+});
+
+// --- ambient sound: generated live, no audio files ---
+function startSound(kind){
+  stopSound();
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=audioCtx; const len=2*ctx.sampleRate;
+    const buffer=ctx.createBuffer(1,len,ctx.sampleRate); const data=buffer.getChannelData(0);
+    let last=0;
+    for(let i=0;i<len;i++){ const white=Math.random()*2-1; last=(last+0.02*white)/1.02; data[i]=(kind==="rain"? white*0.5 : last*3.2); }
+    const src=ctx.createBufferSource(); src.buffer=buffer; src.loop=true;
+    const filter=ctx.createBiquadFilter(); filter.type="lowpass";
+    filter.frequency.value = kind==="rain"? 1400 : kind==="forest"? 620 : 420;
+    const gain=ctx.createGain(); gain.gain.value = kind==="rain"? 0.10 : 0.16;
+    src.connect(filter); filter.connect(gain); gain.connect(ctx.destination); src.start();
+    let lfo=null, lfoGain=null;
+    if(kind==="ocean"||kind==="lake"){
+      lfo=ctx.createOscillator(); lfo.frequency.value= kind==="ocean"? 0.09 : 0.05;
+      lfoGain=ctx.createGain(); lfoGain.gain.value=0.07; lfo.connect(lfoGain); lfoGain.connect(gain.gain); lfo.start();
+    }
+    audioNodes={src,gain,lfo};
+  }catch(e){ /* silence is fine */ }
+}
+function stopSound(){ if(audioNodes){ try{audioNodes.src.stop();}catch(e){} if(audioNodes.lfo){try{audioNodes.lfo.stop();}catch(e){}} audioNodes=null; } }
+
+// --- session engine ---
+function fmt(s){ return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function setPhase(){
+  const p=sessionWorld.pattern[phaseIdx];
+  phaseLeft=p.sec;
+  document.getElementById("breathCircleInner").textContent=p.label.split(" — ")[0];
+  document.getElementById("phaseHint").textContent=p.label+" · "+p.sec+"s";
+  document.getElementById("breathCircle").style.transform="scale("+p.scale+")";
+}
+function tick(){
+  if(paused) return;
+  elapsed+=0.25;
+  phaseLeft-=0.25;
+  if(phaseLeft<=0){
+    if(sessionWorld.pattern[phaseIdx].label.toLowerCase().startsWith("breathe in")) breathsDone++;
+    phaseIdx=(phaseIdx+1)%sessionWorld.pattern.length; setPhase();
+  }
+  const left=Math.max(0,Math.ceil(durationSec-elapsed));
+  document.getElementById("timerText").textContent=fmt(left)+" left";
+  document.getElementById("breathCount").textContent=breathsDone+" full breath"+(breathsDone===1?"":"s");
+  document.getElementById("progressBar").style.width=Math.min(100,elapsed/durationSec*100)+"%";
+  if(elapsed>=durationSec) finishSession(false);
+}
+function beginSession(){
+  sessionWorld=WORLDS[chosenMood];
+  document.getElementById("setup").style.display="none";
+  document.getElementById("finish").style.display="none";
+  const ses=document.getElementById("session"); ses.style.display="block";
+  const scene=document.getElementById("scene"); scene.className="scene "+sessionWorld.scene;
+  document.getElementById("worldName").textContent=sessionWorld.name;
+  document.getElementById("worldLine").textContent=sessionWorld.line;
+  elapsed=0; breathsDone=0; phaseIdx=0; paused=false; running=true;
+  document.getElementById("pauseBtn").textContent="⏸ Pause";
+  soundOn=true; document.getElementById("soundBtn").textContent="🔊 Sound on";
+  setPhase(); startSound(sessionWorld.sound);
+  clearInterval(tickTimer); tickTimer=setInterval(tick,250);
+  ses.scrollIntoView({behavior:"smooth"});
+}
+function finishSession(early){
+  if(!running) return; running=false; clearInterval(tickTimer); stopSound();
+  document.getElementById("session").style.display="none";
+  if(!early && elapsed>=durationSec*0.8) saveSession();
+  const mins=durationSec>=60? (durationSec/60)+" minute"+(durationSec>60?"s":"") : durationSec+" seconds";
+  document.getElementById("finishLine").textContent=(early?"You came back early from ":"You spent "+mins+" in ")+sessionWorld.name+" — "+breathsDone+" full breaths, at its own pace. No score. It counts because you did it.";
+  document.getElementById("finish").style.display="block";
+  updateDelta(); buildShare();
+  document.getElementById("finish").scrollIntoView({behavior:"smooth"});
+}
+function updateDelta(){
+  const after=parseInt(document.getElementById("tensionAfter").value,10);
+  const d=beforeVal-after; const el=document.getElementById("deltaOut");
+  if(d>0) el.textContent="Tension: "+beforeVal+" → "+after+" · down "+d+". That's a real minute's work.";
+  else if(d===0) el.textContent="Tension: "+beforeVal+" → "+after+" · no change today — some days the win is just stopping.";
+  else el.textContent="Tension: "+beforeVal+" → "+after+" · up a little. Be gentle with the next hour; try the Ocean pattern tonight.";
+  buildShare();
+}
+function buildShare(){
+  const after=document.getElementById("tensionAfter").value;
+  document.getElementById("shareOut").value="🌙 I took One Minute Elsewhere — "+(sessionWorld?sessionWorld.name:"")+", "+breathsDone+" slow breaths. Tension "+beforeVal+" → "+after+". Free, no signup: https://questonryan-coder.github.io/one-minute-elsewhere/";
+}
+document.getElementById("beginBtn").addEventListener("click",beginSession);
+document.getElementById("pauseBtn").addEventListener("click",e=>{
+  paused=!paused; e.target.textContent=paused?"▶ Resume":"⏸ Pause";
+  document.getElementById("phaseHint").textContent=paused?"Paused. The world waits.":sessionWorld.pattern[phaseIdx].label;
+});
+document.getElementById("soundBtn").addEventListener("click",e=>{
+  soundOn=!soundOn; e.target.textContent=soundOn?"🔊 Sound on":"🔇 Sound off";
+  if(soundOn) startSound(sessionWorld.sound); else stopSound();
+});
+document.getElementById("endBtn").addEventListener("click",()=>finishSession(true));
+document.getElementById("againBtn").addEventListener("click",()=>{
+  document.getElementById("finish").style.display="none";
+  document.getElementById("setup").style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+document.getElementById("copyBtn").addEventListener("click",async()=>{
+  const t=document.getElementById("shareOut").value;
+  try{ await navigator.clipboard.writeText(t); document.getElementById("copyMsg").textContent="Copied — paste it anywhere."; }
+  catch(e){ document.getElementById("shareOut").select(); document.execCommand("copy"); document.getElementById("copyMsg").textContent="Copied — paste it anywhere."; }
+});
+</script>
+</body>
+</html>
